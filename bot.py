@@ -1,25 +1,24 @@
 import asyncio
-import os
-import logging
-import requests
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
+import requests
+import logging
+import os
 
-# Configuration des logs
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# 🔑 Récupération des variables d'environnement (corrigé)
+# Récupérer les variables d'environnement
 TOKEN = os.getenv("TOKEN")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 
-# 🔍 Vérification des tokens
-if not TOKEN or not MISTRAL_API_KEY:
-    raise ValueError("❌ Erreur: Token ou clé API Mistral manquants ! Vérifiez vos variables d'environnement.")
+# Test de l'initialisation
+def test_initialization():
+    if not TOKEN or not MISTRAL_API_KEY:
+        print("Erreur: Token ou clé API manquants !")
+        return False
+    print("Initialisation réussie !")
+    return True
 
 async def generate_compliment():
     """Génère un compliment avec l'IA Mistral."""
-    url = "https://api.mistral.ai/v1/completions"
     headers = {
         "Authorization": f"Bearer {MISTRAL_API_KEY}",
         "Content-Type": "application/json"
@@ -29,43 +28,42 @@ async def generate_compliment():
         "prompt": "Génère un compliment sincère, chaleureux et mignon, non genré, pour une personne.",
         "max_tokens": 60
     }
-
-    try:
-        response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()  # Vérifie les erreurs HTTP
-        return response.json()["choices"][0]["text"].strip()
-    except requests.exceptions.RequestException as e:
-        logger.error(f"❌ Erreur API Mistral: {e}")
-        return "Erreur lors de la génération du compliment. 😢"
+    response = requests.post("https://api.mistral.ai/v1/completions", json=data, headers=headers)
+    response.raise_for_status()  # Vérifie les erreurs HTTP
+    return response.json()["choices"][0]["text"].strip()
 
 async def send_compliment(update: Update, context: CallbackContext):
     """Envoie un compliment en réponse à la commande /weewoo."""
-    compliment = await generate_compliment()
-    message = f"🚨🚓🚨WEE WOO !!! POLICE DU SELF-LOVE !!\n{compliment}"
-    await update.message.reply_text(message)
-
-async def start(update: Update, context: CallbackContext):
-    """Répond à la commande /start."""
-    await update.message.reply_text("👋 Hello ! Tape /weewoo pour recevoir un compliment !")
+    try:
+        compliment = await generate_compliment()
+        message = f"🚨🚓🚨WEE WOO !!! POLICE DU SELF-LOVE !!\n{compliment}"
+        await update.message.reply_text(message)
+    except Exception as e:
+        logging.error(f"Erreur lors de l'envoi du compliment : {e}")
 
 async def main():
     """Démarre le bot Telegram."""
     application = Application.builder().token(TOKEN).build()
 
-    # Ajout des commandes
-    application.add_handler(CommandHandler("start", start))
+    # Ajouter la gestion de la commande /weewoo
     application.add_handler(CommandHandler("weewoo", send_compliment))
 
-    # Lancer le bot
+    # Lancer l'application
     await application.run_polling()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if "This event loop is already running" in str(e):
-            import nest_asyncio
-            nest_asyncio.apply()
-            asyncio.run(main())
-        else:
-            raise e
+    if test_initialization():
+        logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+        logger = logging.getLogger(__name__)
+
+        # Obtenir la boucle d'événements actuelle ou en créer une nouvelle
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(main())
+        except RuntimeError as e:
+            if "This event loop is already running" in str(e):
+                import nest_asyncio
+                nest_asyncio.apply()
+                loop.run_until_complete(main())
+            else:
+                raise e
