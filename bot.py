@@ -3,14 +3,12 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
 import requests
 import logging
+import os
 
-# Ton token Telegram
-TOKEN = "7468439207:AAGlsyi_i0A40TtXA_rJX_c0M84bQUYYbHE"
-# Ton API Key Mistral
-MISTRAL_API_KEY = "h7NG4OH6aBj9Nww2oUfdLQuyTvVMsB4r"
-
-# ID du groupe Telegram
-CHAT_ID = "-1001267100130"
+# Récupérer les variables d'environnement
+TOKEN = os.getenv("TOKEN")
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+CHAT_ID = os.getenv("CHAT_ID", "-1001267100130")
 
 # Test de l'initialisation
 def test_initialization():
