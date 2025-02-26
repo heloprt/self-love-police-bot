@@ -1,6 +1,6 @@
-import asyncio
+import threading
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext, Updater
 import requests
 import logging
 import os
@@ -17,7 +17,7 @@ def test_initialization():
     print("Initialisation réussie !")
     return True
 
-async def generate_compliment():
+def generate_compliment():
     """Génère un compliment avec l'IA Mistral."""
     headers = {
         "Authorization": f"Bearer {MISTRAL_API_KEY}",
@@ -32,38 +32,32 @@ async def generate_compliment():
     response.raise_for_status()  # Vérifie les erreurs HTTP
     return response.json()["choices"][0]["text"].strip()
 
-async def send_compliment(update: Update, context: CallbackContext):
+def send_compliment(update: Update, context: CallbackContext):
     """Envoie un compliment en réponse à la commande /weewoo."""
     try:
-        compliment = await generate_compliment()
+        compliment = generate_compliment()
         message = f"🚨🚓🚨WEE WOO !!! POLICE DU SELF-LOVE !!\n{compliment}"
-        await update.message.reply_text(message)
+        update.message.reply_text(message)
     except Exception as e:
         logging.error(f"Erreur lors de l'envoi du compliment : {e}")
 
-async def main():
+def main():
     """Démarre le bot Telegram."""
-    application = Application.builder().token(TOKEN).build()
+    updater = Updater(TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
 
     # Ajouter la gestion de la commande /weewoo
-    application.add_handler(CommandHandler("weewoo", send_compliment))
+    dispatcher.add_handler(CommandHandler("weewoo", send_compliment))
 
-    # Lancer l'application
-    await application.run_polling()
+    # Démarrer le polling dans un thread séparé
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == "__main__":
     if test_initialization():
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         logger = logging.getLogger(__name__)
 
-        # Obtenir la boucle d'événements actuelle ou en créer une nouvelle
-        loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(main())
-        except RuntimeError as e:
-            if "This event loop is already running" in str(e):
-                import nest_asyncio
-                nest_asyncio.apply()
-                loop.run_until_complete(main())
-            else:
-                raise e
+        # Démarrer le bot dans un thread séparé
+        bot_thread = threading.Thread(target=main)
+        bot_thread.start()
