@@ -1,6 +1,6 @@
 import asyncio
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, CallbackContext
 import requests
 import logging
 import os
@@ -8,7 +8,6 @@ import os
 # Récupérer les variables d'environnement
 TOKEN = os.getenv("TOKEN")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-CHAT_ID = os.getenv("CHAT_ID", "-1001267100130")
 
 # Test de l'initialisation
 def test_initialization():
@@ -42,27 +41,9 @@ async def send_compliment(update: Update, context: CallbackContext):
     except Exception as e:
         logging.error(f"Erreur lors de l'envoi du compliment : {e}")
 
-async def handle_message(update: Update, context: CallbackContext):
-    """Envoie un compliment tous les 500 messages."""
-    if 'message_count' not in context.bot_data:
-        context.bot_data['message_count'] = 0
-
-    context.bot_data['message_count'] += 1
-
-    if context.bot_data['message_count'] % 500 == 0:
-        try:
-            compliment = await generate_compliment()
-            message = f"🚨🚨POLICE DU SELF-LOVE ! INTERVENTION SURPRISE !\n{compliment}"
-            await update.message.reply_text(message)
-        except Exception as e:
-            logging.error(f"Erreur lors de l'envoi du compliment : {e}")
-
 async def main():
     """Démarre le bot Telegram."""
     application = Application.builder().token(TOKEN).build()
-
-    # Ajouter la gestion des messages
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Ajouter la gestion de la commande /weewoo
     application.add_handler(CommandHandler("weewoo", send_compliment))
