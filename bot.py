@@ -6,8 +6,8 @@ import logging
 import os
 
 # Récupérer les variables d'environnement
-TOKEN = os.getenv("TOKEN")
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+TOKEN = os.getenv("7468439207:AAGlsyi_i0A40TtXA_rJX_c0M84bQUYYbHE")
+MISTRAL_API_KEY = os.getenv("h7NG4OH6aBj9Nww2oUfdLQuyTvVMsB4r")
 
 # Test de l'initialisation
 def test_initialization():
