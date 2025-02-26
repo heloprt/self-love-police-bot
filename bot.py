@@ -75,4 +75,14 @@ if __name__ == "__main__":
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         logger = logging.getLogger(__name__)
 
-        asyncio.run(main())
+        # Obtenir la boucle d'événements actuelle ou en créer une nouvelle
+        loop = asyncio.get_event_loop()
+        try:
+            loop.run_until_complete(main())
+        except RuntimeError as e:
+            if "This event loop is already running" in str(e):
+                import nest_asyncio
+                nest_asyncio.apply()
+                loop.run_until_complete(main())
+            else:
+                raise e
