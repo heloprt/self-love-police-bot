@@ -1,6 +1,6 @@
 import threading
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackContext, Updater
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import requests
 import logging
 import os
@@ -32,32 +32,29 @@ def generate_compliment():
     response.raise_for_status()  # Vérifie les erreurs HTTP
     return response.json()["choices"][0]["text"].strip()
 
-def send_compliment(update: Update, context: CallbackContext):
+async def send_compliment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Envoie un compliment en réponse à la commande /weewoo."""
     try:
         compliment = generate_compliment()
         message = f"🚨🚓🚨WEE WOO !!! POLICE DU SELF-LOVE !!\n{compliment}"
-        update.message.reply_text(message)
+        await update.message.reply_text(message)
     except Exception as e:
         logging.error(f"Erreur lors de l'envoi du compliment : {e}")
 
 def main():
     """Démarre le bot Telegram."""
-    updater = Updater(TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+    application = ApplicationBuilder().token(TOKEN).build()
 
     # Ajouter la gestion de la commande /weewoo
-    dispatcher.add_handler(CommandHandler("weewoo", send_compliment))
+    application.add_handler(CommandHandler("weewoo", send_compliment))
 
-    # Démarrer le polling dans un thread séparé
-    updater.start_polling()
-    updater.idle()
+    # Démarrer le polling
+    application.run_polling()
 
 if __name__ == "__main__":
     if test_initialization():
         logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
         logger = logging.getLogger(__name__)
 
-        # Démarrer le bot dans un thread séparé
-        bot_thread = threading.Thread(target=main)
-        bot_thread.start()
+        # Démarrer le bot dans le thread principal
+        main()
