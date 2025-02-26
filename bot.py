@@ -1,36 +1,34 @@
-import threading
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import requests
 import logging
 import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Récupérer les variables d'environnement
-TOKEN = os.getenv("TOKEN")
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 # Test de l'initialisation
 def test_initialization():
-    if not TOKEN or not MISTRAL_API_KEY:
+    if not TOKEN or not HUGGINGFACE_API_KEY:
         print("Erreur: Token ou clé API manquants !")
         return False
     print("Initialisation réussie !")
     return True
 
 def generate_compliment():
-    """Génère un compliment avec l'IA Mistral."""
+    """Génère un compliment avec l'API Hugging Face."""
     headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {HUGGINGFACE_API_KEY}"
     }
     data = {
-        "model": "mistral-7b",
-        "prompt": "Génère un compliment sincère, chaleureux et mignon, non genré, pour une personne.",
-        "max_tokens": 60
+        "inputs": "Génère un compliment sincère, chaleureux et mignon, non genré, pour une personne.",
+        "parameters": {"max_length": 60}
     }
-    response = requests.post("https://api.mistral.ai/v1/completions", json=data, headers=headers)
+    logging.info(f"Envoi de la requête à l'API Hugging Face avec les données : {data}")
+    response = requests.post("https://api-inference.huggingface.co/models/bigscience/bloom", headers=headers, json=data)
     response.raise_for_status()  # Vérifie les erreurs HTTP
-    return response.json()["choices"][0]["text"].strip()
+    return response.json()[0]["generated_text"].strip()
 
 async def send_compliment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Envoie un compliment en réponse à la commande /weewoo."""
